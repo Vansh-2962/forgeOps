@@ -1,0 +1,20 @@
+{
+  "name": "@repo/types",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "exports": {
+    ".": "./src/index.ts",
+    "./auth": "./src/auth.ts",
+    "./user": "./src/user.ts",
+    "./github": "./src/github.ts",
+    "./agent": "./src/agentRun.ts"
+  }
+}
