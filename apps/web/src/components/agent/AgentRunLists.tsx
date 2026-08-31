@@ -7,6 +7,7 @@ import { RunStatusBadge, StatusDot } from "../shared/StatusBadge";
 import { useGetAllAgentRuns } from "@/hooks/agent/useGetAllAgentRuns";
 import { AgentRun, AgentStatus } from "@repo/types/agent";
 import TablerLoader from "../loaders/TablerLoader";
+import NotFound from "../NotFound";
 
 const filters: { label: string; value: RunStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -28,25 +29,26 @@ const AgentRunLists = () => {
   return (
     <>
       <div className="mt-5 flex flex-wrap items-center gap-1.5">
-        {filters.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
-            className={cn(
-              "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-              filter === f.value
-                ? "bg-foreground text-background"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground",
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
+        {runs.length > 0 &&
+          filters.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={cn(
+                "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                filter === f.value
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
       </div>
 
       {isLoading ? (
-        <TablerLoader className="mt-10"/>
-      ) : (
+        <TablerLoader className="mt-10" />
+      ) : runs.length > 0 ? (
         <div className="mt-4 overflow-hidden rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
@@ -114,6 +116,8 @@ const AgentRunLists = () => {
             </div>
           )}
         </div>
+      ) : (
+        <NotFound resource="agent runs" />
       )}
     </>
   );

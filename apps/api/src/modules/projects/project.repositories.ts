@@ -24,8 +24,8 @@ export class ProjectRepository {
     });
   }
 
-  async findProjectBySlug(slug: string, db: DbClient = this.prisma) {
-    return db.project.findUnique({ where: { slug } });
+  async findProjectByRepoId(repoId: string, db: DbClient = this.prisma) {
+    return db.project.findUnique({ where: { repositoryId: repoId } });
   }
 
   async createProject(data: CreateProjectDTO, db: DbClient = this.prisma) {

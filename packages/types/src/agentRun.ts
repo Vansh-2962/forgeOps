@@ -21,3 +21,28 @@ export interface AgentRun {
     name: string;
   };
 }
+
+export interface AgentExecutionContext {
+  agentRunId: string;
+  userId: string;
+
+  project: {
+    id: string;
+    name: string;
+  };
+
+  repository: {
+    id: string;
+    name: string;
+    fullName: string;
+    owner: string;
+  };
+
+  environment: {
+    id: string;
+    name: string;
+    type: string;
+  };
+
+  prompt: string;
+}

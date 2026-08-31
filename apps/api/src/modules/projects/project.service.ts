@@ -1,7 +1,6 @@
 import { Prisma, PrismaClient } from "@/generated/prisma/client.js";
 import { CreateProjectDTO } from "./project.dto.js";
 import { ProjectRepository } from "./project.repositories.js";
-import { NotFoundError } from "@/errors/not-found.error.js";
 import { DbClient } from "./project.types.js";
 
 export class ProjectService {
@@ -10,21 +9,12 @@ export class ProjectService {
     private readonly prisma: PrismaClient,
   ) {}
 
-  private generateSlug(name: string) {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+/, "")
-      .replace(/-+$/, "");
-  }
-
   async findOrCreateProject(
     data: CreateProjectDTO,
     db: DbClient = this.prisma,
   ) {
-    const slug = this.generateSlug(data.name);
-    const existingProject = await this.projectRepository.findProjectBySlug(
-      slug,
+    const existingProject = await this.projectRepository.findProjectByRepoId(
+      data.repositoryId,
       db,
     );
 

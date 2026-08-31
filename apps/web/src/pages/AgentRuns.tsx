@@ -9,18 +9,16 @@ import { toast } from "sonner";
 import { useGithubStatus } from "@/hooks/github/useGithubStatus";
 import ButtonSkeleton from "@/components/loaders/ButtonSkeleton";
 import AgentRunLists from "@/components/agent/AgentRunLists";
+import GithubConnectModal from "@/components/github/GithubConnectModal";
 
 export default function AgentRuns() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [githubDialogOpen, setGithubDialogOpen] = useState(false);
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(window.location.search);
   const githubStatus = searchParams.get("github");
 
-  const handleGithubConnect = () => {
-    window.location.href = `${env?.VITE_API_BASE_URL}/github/connect`;
-  };
-
-  const { data, isLoading } = useGithubStatus();
+  const { data } = useGithubStatus();
   const githubConnected = data?.data?.connected ?? false;
 
   useEffect(() => {
@@ -37,6 +35,10 @@ export default function AgentRuns() {
     }
   }, [githubStatus, navigate]);
 
+  const handleDialog = () => {
+    githubConnected ? setDialogOpen(true) : setGithubDialogOpen(true);
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <PageHeader
@@ -44,34 +46,19 @@ export default function AgentRuns() {
         description="Autonomous tasks executed by your AI DevOps engineer."
         actions={
           <>
-            {githubConnected ? (
-              <Button
-                size="sm"
-                onClick={() => setDialogOpen(true)}
-                className="gap-1.5"
-              >
-                <Plus className="h-4 w-4" /> New Agent Task
-              </Button>
-            ) : isLoading ? (
-              <>
-                <ButtonSkeleton size="xs" />
-              </>
-            ) : (
-              <Button
-                disabled={githubConnected}
-                size="sm"
-                onClick={handleGithubConnect}
-                className="gap-1.5"
-              >
-                <Unplug className="h-4 w-4" /> Connect Github
-              </Button>
-            )}
+            <Button size="sm" onClick={handleDialog} className="gap-1.5">
+              <Plus className="h-4 w-4" /> New Agent Task
+            </Button>
           </>
         }
       />
 
       <AgentRunLists />
 
+      <GithubConnectModal
+        open={githubDialogOpen}
+        onOpenChange={setGithubDialogOpen}
+      />
       <NewAgentTaskDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   );
