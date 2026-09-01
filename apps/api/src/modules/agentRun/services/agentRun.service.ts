@@ -133,7 +133,7 @@ export class AgentRunService {
         prompt: agentRun.prompt,
       };
 
-      const result = await this.agentExecutorService.execute(context);
+      const result = await this.agentExecutorService.execute(agentRun);
       await this.agentRunRepository.updateStatus(agentRunId, "COMPLETED");
     } catch (error) {
       await this.agentRunRepository.updateStatus(agentRunId, "FAILED");

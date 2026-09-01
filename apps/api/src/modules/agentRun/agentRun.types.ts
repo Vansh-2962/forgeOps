@@ -31,3 +31,9 @@ export const agentRunWithContextArgs = {
 export type AgentRunWithContext = Prisma.AgentRunGetPayload<
   typeof agentRunWithContextArgs
 >;
+
+
+export interface AgentExecutionResult {
+  success:boolean
+  message:string
+}

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { runSchema } from "./validators/agentRun.schema.js";
 import { ValidationError } from "@/errors/validation.error.js";
-import { AgentRunService } from "./agentRun.service.js";
+import { AgentRunService } from "./services/agentRun.service.js";
 
 export class AgentController {
   constructor(private readonly agentRunService: AgentRunService) {}
