@@ -16,9 +16,9 @@ export class AgentRunService {
     private readonly agentRunRepository: AgentRunRepository,
     private readonly githubService: GithubService,
     private readonly projectService: ProjectService,
-    private readonly agentExecutorService: AgentExecutorService,
     private readonly prisma: PrismaClient,
     private readonly agentRunQueue: AgentRunQueue,
+    private readonly agentExecutorService: AgentExecutorService,
   ) {}
 
   private generateSlug(): string {

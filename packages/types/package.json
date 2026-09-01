@@ -15,6 +15,7 @@
     "./auth": "./src/auth.ts",
     "./user": "./src/user.ts",
     "./github": "./src/github.ts",
-    "./agent": "./src/agentRun.ts"
+    "./agent": "./src/agentRun.ts",
+    "./project": "./src/project.ts"
   }
 }

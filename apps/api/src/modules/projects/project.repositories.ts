@@ -1,6 +1,7 @@
 import { envType, PrismaClient, Project } from "@/generated/prisma/client.js";
 import { CreateProjectDTO } from "./project.dto.js";
 import { DbClient } from "./project.types.js";
+import { ProjectType } from "@repo/types";
 
 export class ProjectRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -58,6 +59,35 @@ export class ProjectRepository {
         name: env,
         type: this.getEnvType(env),
         projectId,
+      },
+    });
+  }
+
+  async findAllProjects(userId: string): Promise<ProjectType[]> {
+    return await this.prisma.project.findMany({
+      where: {
+        ownerId: userId,
+      },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        repository: {
+          select: {
+            id: true,
+            fullName: true,
+            defaultBranch: true,
+          },
+        },
+        environments: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
   }

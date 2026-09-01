@@ -50,4 +50,8 @@ export class ProjectService {
     );
     return response;
   }
+
+  async getAllProjects(userId: string) {
+    return await this.projectRepository.findAllProjects(userId);
+  }
 }

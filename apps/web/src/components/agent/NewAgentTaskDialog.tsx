@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ArrowRight, GithubIcon, Lock, Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -32,7 +31,6 @@ export function NewAgentTaskDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const navigate = useNavigate();
   const [repo, setRepo] = useState("");
   const [env, setEnv] = useState("development");
   const [task, setTask] = useState("");
