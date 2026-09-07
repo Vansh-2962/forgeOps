@@ -27,7 +27,7 @@ export class AgentController {
   getAllAgentRuns = async (req: Request, res: Response) => {
     const userId = req.user.id;
     const response = await this.agentRunService.getAllAgentRun(userId);
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       message: "Agent runs fetched successfully",
       data: response,

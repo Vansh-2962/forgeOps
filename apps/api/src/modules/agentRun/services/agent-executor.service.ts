@@ -37,6 +37,8 @@ export class AgentExecutorService {
   async execute(agentRun: AgentRunWithContext): Promise<AgentExecutionResult> {
     const context = this.buildExecutionContext(agentRun);
     const systemPrompt = buildAgentSystemPrompt(context);
+
+    
     
     return {
       success: true,
