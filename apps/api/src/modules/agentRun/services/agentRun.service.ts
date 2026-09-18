@@ -27,7 +27,6 @@ export class AgentRunService {
   }
 
   async createAgentRun(input: RunSchema, userId: string) {
-    const logger = getLogger();
     const repository = await this.githubService.getRepositoryById(
       userId,
       input.repoId,

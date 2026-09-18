@@ -18,6 +18,8 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().min(1),
   BETTER_AUTH_URL: z.string().min(1),
   REDIS_URL: z.string().min(1),
+  GROQ_API_KEY: z.string().min(1),
+  GROQ_MODEL: z.string().min(1),
 });
 
 const envResult = envSchema.safeParse(process.env);
