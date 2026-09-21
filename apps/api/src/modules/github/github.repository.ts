@@ -32,4 +32,8 @@ export class GithubRepository {
   async createRepository(data: CreateRepoDTO, db: DbClient = prisma) {
     return await db.repository.create({data});
   }
+
+  
+
+
 }

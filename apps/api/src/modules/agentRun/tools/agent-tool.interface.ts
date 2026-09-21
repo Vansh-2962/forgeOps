@@ -1,6 +1,10 @@
 export interface AgentToolContext {
   agentRunId: string;
-  repositoryId: string;
+  repository: {
+    id: string;
+    fullName: string;
+    owner: string;
+  };
   environmentId: string;
   projectId: string;
   userId: string;

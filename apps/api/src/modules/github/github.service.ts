@@ -12,6 +12,7 @@ import { NotFoundError } from "@/errors/not-found.error.js";
 import { DbClient } from "../projects/project.types.js";
 import { PrismaClient, Repository } from "@/generated/prisma/client.js";
 import { CreateRepoDTO } from "./github.dto.js";
+import { RepositoryFile, RepositoryFileContent } from "./github.types.js";
 
 export class GithubService {
   constructor(
@@ -164,5 +165,113 @@ export class GithubService {
     db: DbClient = this.prisma,
   ): Promise<Repository> {
     return await this.githubRepository.createRepository(data, db);
+  }
+
+  async listFiles(
+    userId: string,
+    repoFullName: string,
+    path = "",
+  ): Promise<RepositoryFile[]> {
+    const connection = await this.githubRepository.getConnection(userId);
+    if (!connection) {
+      throw new NotFoundError("Github account");
+    }
+
+    const decryptedAccessToken = decrypt(connection.accessToken);
+    const url = new URL(
+      `${GITHUB_API_URL}/repos/${repoFullName}/content/${path}`,
+    );
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${decryptedAccessToken}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+
+      logger.error(
+        {
+          status: response.status,
+          error,
+        },
+        "Failed to fetch repository files",
+      );
+      throw new Error(
+        `Github did not return any files for repo : ${repoFullName}`,
+      );
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+      throw new Error(`Expected a directory but received a file`);
+    }
+
+    return data.map((item) => ({
+      path: item.path,
+      type: item.type === "dir" ? "directory" : "file",
+    }));
+  }
+
+  async readFile(
+    userId: string,
+    repoFileName: string,
+    path: string,
+  ): Promise<RepositoryFileContent> {
+    const connection = await this.githubRepository.getConnection(userId);
+    if (!connection) {
+      throw new NotFoundError("Github account");
+    }
+
+    const decryptedAccessToken = decrypt(connection.accessToken);
+    const url = new URL(
+      `${GITHUB_API_URL}/repos/${repoFileName}/contents/${path}`,
+    );
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${decryptedAccessToken}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+
+      logger.error(
+        {
+          status: response.status,
+          error,
+        },
+        "Failed to read contents",
+      );
+      throw new Error(`Failed to read file contents`);
+    }
+
+    const data = await response.json();
+
+    if (Array.isArray(data)) {
+      throw new Error(`The provided path is a directory, not a file: ${path}`);
+    }
+
+    if (data.type !== "file") {
+      throw new Error(`The provided path is not a readable file: ${path}`);
+    }
+
+    if (!data.content) {
+      throw new Error(`GitHub did not return content for file: ${path}`);
+    }
+
+    const content = Buffer.from(data.content, "base64").toString("utf-8");
+
+    return {
+      path: data.path,
+      content,
+      size: data.size,
+    };
   }
 }

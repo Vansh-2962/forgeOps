@@ -59,7 +59,11 @@ export class AgentExecutorService {
       agentRunId: context.agentRunId,
       userId: context.userId,
       projectId: context.project.id,
-      repositoryId: context.repository.id,
+      repository: {
+        id: context.repository.id,
+        fullName: context.repository.fullName,
+        owner: context.repository.owner,
+      },
       environmentId: context.environment.id,
     };
   }
@@ -125,22 +129,40 @@ export class AgentExecutorService {
     ];
 
     const tools = this.buildLLMTools();
-    const response: LLMCompletionResult = await this.llmProvider.generate({
-      messages,
-      tools,
-    });
+    const toolContext = this.buildToolContext(context);
 
-    if (response.toolCalls.length === 0) {
-      return {
-        success: true,
-        message: response.content ?? "Agent execution completed",
-      };
+    for (let iteration = 0; iteration < this.MAX_ITERATIONS; iteration++) {
+      const response = await this.llmProvider.generate({
+        messages,
+        tools,
+      });
+
+      if (response.toolCalls.length === 0) {
+        return {
+          success: true,
+          message: response.content ?? "Agent run completed",
+        };
+      }
+
+      messages.push({
+        role: "assistant",
+        content: response.content,
+        toolCalls: response.toolCalls,
+      });
+
+      for (const toolCall of response.toolCalls) {
+        const toolResult = await this.executeToolCall(toolCall, toolContext);
+
+        messages.push({
+          role: "tool",
+          toolCallId: toolCall.id,
+          content: JSON.stringify(toolResult),
+        });
+      }
     }
 
-    // tool execution
-    return {
-      success: true,
-      message: response.content ?? "Agent execution completed",
-    };
+    throw new Error(
+      `Agent executed maximum iteration count (${this.MAX_ITERATIONS})`,
+    );
   }
 }
