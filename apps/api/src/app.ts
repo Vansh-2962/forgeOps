@@ -6,6 +6,7 @@ import { errorMiddleware } from "@/middlewares/error.middleware.js";
 import GithubRouter from "@/modules/github/github.routes.js";
 import AgentRouter from "@/modules/agentRun/agentRun.routes.js";
 import ProjectRouter from "@/modules/projects/project.routes.js";
+import AgentEventRouter from "@/modules/agentRun/agentEventPublisher/agentEvent.routes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
@@ -37,6 +38,7 @@ app.get("/health", (req: Request, res: Response) => {
 app.use("/api/v1/github", GithubRouter);
 app.use("/api/v1/agent", AgentRouter);
 app.use("/api/v1/project", ProjectRouter);
+app.use("/api/v1/event", AgentEventRouter);
 
 app.use(errorMiddleware);
 

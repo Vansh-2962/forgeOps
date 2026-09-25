@@ -8,6 +8,7 @@ import { useGetAllAgentRuns } from "@/hooks/agent/useGetAllAgentRuns";
 import { AgentRun, AgentStatus } from "@repo/types/agent";
 import TablerLoader from "../loaders/TablerLoader";
 import NotFound from "../NotFound";
+import { AgentRunRow } from "./AgentRunRow";
 
 const filters: { label: string; value: RunStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -71,42 +72,7 @@ const AgentRunLists = () => {
             </thead>
             <tbody className="divide-y divide-border">
               {runs.map((run: AgentRun) => (
-                <tr
-                  key={run.id}
-                  className="cursor-pointer transition-colors hover:bg-muted/40"
-                  onClick={() => (window.location.href = `/runs/${run.id}`)}
-                >
-                  <td className="px-4 py-3">
-                    <Link to={`/runs/${run.id}`} className="block">
-                      <span className="font-medium truncate max-w-75">
-                        {run.prompt}
-                      </span>
-                    </Link>
-                  </td>
-                  <td className="hidden px-4 py-3 font-mono text-xs text-muted-foreground md:table-cell">
-                    {run.project.name}
-                  </td>
-                  <td className="px-4 py-3">
-                    <RunStatusBadge status={run.status as AgentStatus} />
-                  </td>
-                  <td className="hidden px-4 py-3 lg:table-cell">
-                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      {run.status === "RUNNING" && (
-                        <StatusDot status="RUNNING" pulse />
-                      )}
-                      {run.status === "PENDING" && "Initializing..."}
-                    </span>
-                  </td>
-                  <td className="hidden px-4 py-3 font-mono text-xs text-muted-foreground sm:table-cell">
-                    {run.status === "PENDING" ? "0s" : ""}
-                  </td>
-                  <td className="hidden px-4 py-3 text-xs text-muted-foreground lg:table-cell">
-                    {run.status === "PENDING"
-                      ? "Just now"
-                      : run.startedAt &&
-                        new Date(run.startedAt).toLocaleString()}
-                  </td>
-                </tr>
+                <AgentRunRow key={run.id} run={run} />
               ))}
             </tbody>
           </table>

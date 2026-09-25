@@ -4,14 +4,19 @@ import {
   AgentRunJobData,
 } from "@/infrastructure/queue/agent-run.types.js";
 import { redisConnection } from "@/infrastructure/queue/redis.js";
+import { agentRunService } from "@/modules/agentRun/agentRun.routes.js";
 import { type Job, Worker } from "bullmq";
 
 async function processAgentRun(job: Job<AgentRunJobData>) {
   const { agentRunId } = job.data;
 
-  // ACTUAL AGENT JOB RUN
+  logger.info({ agentRunId, jobId: job.id }, "Agent run executing...");
+
+  await agentRunService.executeAgentRun(agentRunId);
 
   await job.updateProgress(100);
+
+  logger.info({ agentRunId, jobId: job.id }, "Agent run completed...");
   return { agentRunId };
 }
 

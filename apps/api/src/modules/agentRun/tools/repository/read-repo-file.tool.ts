@@ -57,6 +57,7 @@ export class ReadRepositoryFileTool implements AgentTool {
         path: file.path,
         size: file.size,
         content: file.content,
+        sha: file.sha,
       }),
     };
   }

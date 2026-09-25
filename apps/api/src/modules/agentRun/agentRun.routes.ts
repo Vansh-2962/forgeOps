@@ -12,21 +12,24 @@ import { AgentRunService } from "./services/agentRun.service.js";
 import { AgentExecutorService } from "./services/agent-executor.service.js";
 import { GroqProvider } from "./llm/providers/groq.provider.js";
 import { env } from "@/config/env.js";
-import { ToolRegistry } from "./tools/tool-registry.js";
-import { ListRepositoryTool } from "./tools/repository/list-repo-files.tool.js";
-import { ReadRepositoryFileTool } from "./tools/repository/read-repo-file.tool.js";
+import { toolRegistry } from "./tools/tool-registry.js";
+import { RedisEventPublisher } from "./agentEventPublisher/pubsub/agentEvent.publisher.js";
+import { redisConnection } from "@/infrastructure/queue/redis.js";
 
 const router: Router = Router();
 
 const agentRunRepository = new AgentRunRepository(prisma);
 const agentRunQueue = new AgentRunQueue();
 const groqProvider = new GroqProvider(env.GROQ_API_KEY, env.GROQ_MODEL);
-export const toolRegistry = new ToolRegistry();
+const eventPublisher = new RedisEventPublisher(redisConnection);
+
 const agentExecutorService = new AgentExecutorService(
   groqProvider,
   toolRegistry,
+  eventPublisher,
 );
-const agentRunService = new AgentRunService(
+
+export const agentRunService = new AgentRunService(
   agentRunRepository,
   githubService,
   projectService,
@@ -34,10 +37,8 @@ const agentRunService = new AgentRunService(
   agentRunQueue,
   agentExecutorService,
 );
-const agentRunController = new AgentController(agentRunService);
 
-toolRegistry.register(new ListRepositoryTool(githubService));
-toolRegistry.register(new ReadRepositoryFileTool(githubService));
+const agentRunController = new AgentController(agentRunService);
 
 router.post(
   "/run",

@@ -11,7 +11,8 @@
     "start:worker": "node dist/workers/agent-run.worker.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "worker:dev": "tsx watch src/workers/index.ts"
   },
   "keywords": [],
   "author": "",

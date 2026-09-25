@@ -39,7 +39,7 @@ export class GithubController {
     const userId = req.user.id;
     const connection = await this.githubService.getGithubConnection(userId);
     if (!connection) {
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: "Github connection not found",
         data: {

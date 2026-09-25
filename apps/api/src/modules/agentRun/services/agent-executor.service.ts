@@ -17,11 +17,14 @@ import {
   AgentToolContext,
   AgentToolResult,
 } from "../tools/agent-tool.interface.js";
+import { AgentEventPublisher } from "../agentEventPublisher/agentEvent.interface.js";
+import { createAgentEvent } from "../agentEventPublisher/agentEvent.factory.js";
 
 export class AgentExecutorService {
   constructor(
     private readonly llmProvider: LLMProvider,
     private readonly toolRegistry: ToolRegistry,
+    private readonly eventPublisher: AgentEventPublisher,
   ) {}
 
   private readonly MAX_ITERATIONS = 20;
@@ -103,66 +106,151 @@ export class AgentExecutorService {
     }
 
     try {
-      return await tool.execute(args, context);
+      await this.eventPublisher.publish(
+        createAgentEvent(context.agentRunId, "TOOL_START", {
+          tool: toolCall.name,
+          arguments: args,
+        }),
+      );
+      const result = await tool.execute(args, context);
+      if (result.success) {
+        await this.eventPublisher.publish(
+          createAgentEvent(context.agentRunId, "TOOL_COMPLETED", {
+            tool: toolCall.name,
+            output: result.output,
+          }),
+        );
+      } else {
+        await this.eventPublisher.publish(
+          createAgentEvent(context.agentRunId, "TOOL_FAILED", {
+            tool: toolCall.name,
+            error: result.output,
+          }),
+        );
+      }
+      return result;
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Tool execution failed.";
+
+      await this.eventPublisher.publish(
+        createAgentEvent(context.agentRunId, "TOOL_FAILED", {
+          tool: toolCall.name,
+          error: message,
+        }),
+      );
+
       return {
         success: false,
-        output:
-          error instanceof Error ? error.message : "Tool execution failed.",
+        output: message,
       };
     }
   }
 
-  async execute(agentRun: AgentRunWithContext): Promise<AgentExecutionResult> {
+  async execute(
+    agentRun: AgentRunWithContext,
+  ): Promise<AgentExecutionResult | undefined> {
     const context = this.buildExecutionContext(agentRun);
     const systemPrompt = buildAgentSystemPrompt(context);
 
-    const messages: LLMMessage[] = [
-      {
-        role: "system",
-        content: systemPrompt,
-      },
-      {
-        role: "user",
-        content: context.prompt,
-      },
-    ];
+    try {
+      await this.eventPublisher.publish(
+        createAgentEvent(context.agentRunId, "RUN_STARTED", {
+          repository: context.repository.fullName,
+          environment: context.environment!.name,
+          prompt: context.prompt,
+        }),
+      );
 
-    const tools = this.buildLLMTools();
-    const toolContext = this.buildToolContext(context);
+      const messages: LLMMessage[] = [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: context.prompt,
+        },
+      ];
 
-    for (let iteration = 0; iteration < this.MAX_ITERATIONS; iteration++) {
-      const response = await this.llmProvider.generate({
-        messages,
-        tools,
-      });
+      const tools = this.buildLLMTools();
+      const toolContext = this.buildToolContext(context);
 
-      if (response.toolCalls.length === 0) {
-        return {
-          success: true,
-          message: response.content ?? "Agent run completed",
-        };
-      }
+      for (let iteration = 0; iteration < this.MAX_ITERATIONS; iteration++) {
+        await this.eventPublisher.publish(
+          createAgentEvent(context.agentRunId, "LLM_STARTED", {
+            iteration,
+          }),
+        );
 
-      messages.push({
-        role: "assistant",
-        content: response.content,
-        toolCalls: response.toolCalls,
-      });
+        let response: LLMCompletionResult;
+        try {
+          response = await this.llmProvider.generate({
+            messages,
+            tools,
+          });
+        } catch (error) {
+          await this.eventPublisher.publish(
+            createAgentEvent(context.agentRunId, "LLM_FAILED", {
+              iteration,
+              error:
+                error instanceof Error ? error.message : "LLM request failed",
+            }),
+          );
 
-      for (const toolCall of response.toolCalls) {
-        const toolResult = await this.executeToolCall(toolCall, toolContext);
+          throw error;
+        }
+
+        if (response.toolCalls.length === 0) {
+          const message =
+            response.content ?? "Agent completed without a response.";
+
+          await this.eventPublisher.publish(
+            createAgentEvent(context.agentRunId, "AGENT_MESSAGE", {
+              message,
+            }),
+          );
+
+          await this.eventPublisher.publish(
+            createAgentEvent(context.agentRunId, "RUN_COMPLETED", {
+              message,
+            }),
+          );
+
+          return {
+            success: true,
+            message,
+          };
+        }
 
         messages.push({
-          role: "tool",
-          toolCallId: toolCall.id,
-          content: JSON.stringify(toolResult),
+          role: "assistant",
+          content: response.content,
+          toolCalls: response.toolCalls,
         });
-      }
-    }
 
-    throw new Error(
-      `Agent executed maximum iteration count (${this.MAX_ITERATIONS})`,
-    );
+        for (const toolCall of response.toolCalls) {
+          const toolResult = await this.executeToolCall(toolCall, toolContext);
+
+          messages.push({
+            role: "tool",
+            toolCallId: toolCall.id,
+            content: JSON.stringify(toolResult),
+          });
+        }
+      }
+
+      throw new Error(
+        `Agent executed maximum iteration count (${this.MAX_ITERATIONS})`,
+      );
+    } catch (error) {
+      await this.eventPublisher.publish(
+        createAgentEvent(context.agentRunId, "RUN_FAILED", {
+          error:
+            error instanceof Error ? error.message : "Agent execution failed.",
+        }),
+      );
+      throw error;
+    }
   }
 }

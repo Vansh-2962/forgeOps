@@ -9,6 +9,7 @@ import { TerminalPanel } from "@/components/agent/TerminalPanel";
 import { AgentMetricsPanel } from "@/components/agent/AgentMetrics";
 import { getRun } from "@/data/mockData";
 import { toast } from "sonner";
+import { AgentStatus } from "@repo/types";
 
 const toolIcons: Record<string, string> = {
   GitHub: "GH",
@@ -53,7 +54,7 @@ export default function AgentRunDetail() {
           <p className="mt-1 flex items-center gap-2 font-mono text-xs text-muted-foreground">
             {run.project}
             <span className="text-border">·</span>
-            <RunStatusBadge status={run.status} />
+            <RunStatusBadge status={run.status.toUpperCase() as AgentStatus} />
           </p>
           <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
